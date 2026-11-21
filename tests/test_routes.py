@@ -48,3 +48,14 @@ def test_english_keys_win_and_the_v01_ones_still_work():
 def test_both_keys_at_once_is_an_error_naming_both():
     with pytest.raises(ConfigError, match="routes.*rutas"):
         setting({"routes": {}, "rutas": {}}.get, "routes", "rutas")
+
+
+@pytest.mark.parametrize("config", [
+    {1: {"provider": "a", "model": "m1"}, "1": {"provider": "b", "model": "m2"}},
+    {1: {"provider": "a", "model": "m"}},
+    {True: {"provider": "a", "model": "m"}},
+])
+def test_a_non_text_route_name_fails_instead_of_colliding(config):
+    # YAML reads `1:` as an int; str() would merge it with "1" and drop a route without a word.
+    with pytest.raises(RouteError, match="quote it"):
+        load(config)
