@@ -33,7 +33,10 @@ class Route:
     model: str
 
 
-def _route(name: str, value: object) -> Route:
+def _route(name: object, value: object) -> Route:
+    # YAML reads `1:` as an int; coercing it with str() would merge it with "1" and drop a route silently.
+    if not isinstance(name, str):
+        raise RouteError(f"route {name!r}: the name must be text; quote it in config.yaml")
     if not _NAME.match(name):
         raise RouteError(f"route {name!r}: the name must be lowercase letters, digits or '-' (max. 32)")
     if not isinstance(value, dict):
@@ -57,7 +60,7 @@ def load(config: object) -> dict[str, Route]:
     """Validate the whole config; fail loudly on the first unusable route."""
     if not isinstance(config, dict) or not config:
         raise RouteError(f"no routes configured: define {CONFIG_KEY} in config.yaml")
-    return {str(name): _route(str(name), value) for name, value in config.items()}
+    return {name: _route(name, value) for name, value in config.items()}
 
 
 def setting(get, key: str, legacy: str):
